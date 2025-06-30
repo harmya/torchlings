@@ -1,14 +1,23 @@
 use anyhow::{Context, Result};
 use clap::{Arg, ArgMatches, Command};
 use colored::*;
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command as StdCommand;
 use walkdir::{DirEntry, WalkDir};
 
 fn main() -> Result<()> {
+    println!("{}", r#" _                     _      _  _                    
+| |                   | |    | |(_)                   
+| |_  ___   _ __  ___ | |__  | | _  _ __    __ _  ___ 
+| __|/ _ \ | '__|/ __|| '_ \ | || || '_ \  / _` |/ __|
+| |_| (_) || |  | (__ | | | || || || | | || (_| |\__ \
+ \__|\___/ |_|   \___||_| |_||_||_||_| |_| \__, ||___/
+                                            __/ |     
+                                           |___/       "#.truecolor(255, 165, 0));
+
+
     let matches = Command::new("torchlings")
-        .about("A CLI tool for learning PyTorch")
+        .about("Exercises to get you used to reading and writing basic PyTorch code.")
         .version("0.1.0")
         .subcommand_required(true)
         .arg_required_else_help(true)
