@@ -1,1 +1,7 @@
 /target
+
+**/__pycache__/
+.venv
+.DS_Store
+**/.pytest_cache/
+sol*
