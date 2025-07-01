@@ -6,15 +6,18 @@ use std::process::Command as StdCommand;
 use walkdir::{DirEntry, WalkDir};
 
 fn main() -> Result<()> {
-    println!("{}", r#" _                     _      _  _                    
+    println!(
+        "{}",
+        r#" _                     _      _  _                    
 | |                   | |    | |(_)                   
 | |_  ___   _ __  ___ | |__  | | _  _ __    __ _  ___ 
 | __|/ _ \ | '__|/ __|| '_ \ | || || '_ \  / _` |/ __|
 | |_| (_) || |  | (__ | | | || || || | | || (_| |\__ \
  \__|\___/ |_|   \___||_| |_||_||_||_| |_| \__, ||___/
                                             __/ |     
-                                           |___/       "#.truecolor(255, 165, 0));
-
+                                           |___/       "#
+            .truecolor(255, 165, 0)
+    );
 
     let matches = Command::new("torchlings")
         .about("Exercises to get you used to reading and writing basic PyTorch code.")
@@ -57,7 +60,10 @@ fn run_tests(exercises_path: &Path, verbose: bool) -> Result<()> {
     println!();
     let python_files = find_python_files(exercises_path)?;
     if python_files.is_empty() {
-        println!("{}", "No Python files found in exercises directory!".bright_red());
+        println!(
+            "{}",
+            "No Python files found in exercises directory!".bright_red()
+        );
         return Ok(());
     }
 
@@ -68,10 +74,18 @@ fn run_tests(exercises_path: &Path, verbose: bool) -> Result<()> {
     for file in python_files {
         let success = run_python_file(&file, verbose)?;
         if success {
-            println!("{} {}", "✅".bright_green(), file.display().to_string().bright_green());
+            println!(
+                "{} {}",
+                "✅".bright_green(),
+                file.display().to_string().bright_green()
+            );
             passed += 1;
         } else {
-            println!("{} {}", "❌".bright_red(), file.display().to_string().bright_red());
+            println!(
+                "{} {}",
+                "❌".bright_red(),
+                file.display().to_string().bright_red()
+            );
             failed += 1;
             failed_files.push(file);
         }
@@ -102,7 +116,10 @@ fn run_tests(exercises_path: &Path, verbose: bool) -> Result<()> {
 
 fn find_python_files(exercises_path: &Path) -> Result<Vec<PathBuf>> {
     if !exercises_path.exists() {
-        anyhow::bail!("Exercises directory does not exist: {}", exercises_path.display());
+        anyhow::bail!(
+            "Exercises directory does not exist: {}",
+            exercises_path.display()
+        );
     }
 
     fn is_unwanted(entry: &DirEntry) -> bool {
