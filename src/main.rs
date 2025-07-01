@@ -1,24 +1,13 @@
 use anyhow::{Context, Result};
-use clap::{Arg, ArgMatches, Command};
+use clap::{Arg, Command};
 use colored::*;
 use std::path::{Path, PathBuf};
-use std::process::Command as StdCommand;
 use walkdir::{DirEntry, WalkDir};
 
-fn main() -> Result<()> {
-    println!(
-        "{}",
-        r#" _                     _      _  _                    
-| |                   | |    | |(_)                   
-| |_  ___   _ __  ___ | |__  | | _  _ __    __ _  ___ 
-| __|/ _ \ | '__|/ __|| '_ \ | || || '_ \  / _` |/ __|
-| |_| (_) || |  | (__ | | | || || || | | || (_| |\__ \
- \__|\___/ |_|   \___||_| |_||_||_||_| |_| \__, ||___/
-                                            __/ |     
-                                           |___/       "#
-            .truecolor(255, 165, 0)
-    );
+mod pretty;
+mod venv;
 
+fn main() -> Result<()> {
     let matches = Command::new("torchlings")
         .about("Exercises to get you used to reading and writing basic PyTorch code.")
         .version("0.1.0")
@@ -43,123 +32,189 @@ fn main() -> Result<()> {
                         .action(clap::ArgAction::SetTrue),
                 ),
         )
+        .subcommand(
+            Command::new("init")
+                .about("Initialize the exercises directory and create Python environment")
+                .arg(
+                    Arg::new("exercises_path")
+                        .short('e')
+                        .long("exercises-path")
+                        .value_name("PATH")
+                        .help("Path to exercises directory")
+                        .default_value("exercises"),
+                ),
+        )
         .get_matches();
 
-    if let Some(sub) = matches.subcommand_matches("test") {
-        let exercises_path = PathBuf::from(sub.get_one::<String>("exercises_path").unwrap());
-        let verbose = sub.get_flag("verbose");
-        run_tests(&exercises_path, verbose)?;
+    match matches.subcommand() {
+        Some(("test", sub)) => {
+            let exercises_path = PathBuf::from(sub.get_one::<String>("exercises_path").unwrap());
+            let verbose = sub.get_flag("verbose");
+
+            // Ensure Python environment is set up before running tests
+            setup_environment()?;
+            run_tests(&exercises_path, verbose)?;
+        }
+        Some(("init", sub)) => {
+            pretty::welcome_banner();
+            let exercises_path = PathBuf::from(sub.get_one::<String>("exercises_path").unwrap());
+            initialize_project(&exercises_path)?;
+        }
+        _ => unreachable!(), // clap ensures we have a subcommand
     }
 
     Ok(())
 }
 
-fn run_tests(exercises_path: &Path, verbose: bool) -> Result<()> {
-    println!("{}", "Torchlings Test Runner".bright_yellow().bold());
-    println!("{}", "=======================".bright_yellow());
+fn setup_environment() -> Result<()> {
+    println!("{}", "Setting up Python environment...".bright_blue());
+
+    venv::setup_python_environment()
+        .map_err(|e| anyhow::anyhow!("Failed to setup Python environment: {:?}", e))?;
+
+    println!("{}", "✅ Python environment ready!".bright_green());
+    Ok(())
+}
+
+fn initialize_project(exercises_path: &Path) -> Result<()> {
+    println!("{}", "Initializing Torchlings project...".bright_blue());
+
+    // Create exercises directory if it doesn't exist
+    if !exercises_path.exists() {
+        std::fs::create_dir_all(exercises_path).context("Failed to create exercises directory")?;
+        println!(
+            "📁 Created exercises directory: {}",
+            exercises_path.display()
+        );
+    }
+
+    // Setup Python environment
+    setup_environment()?;
+
     println!();
+    println!(
+        "{}",
+        "🚀 Torchlings project initialized successfully!"
+            .bright_green()
+            .bold()
+    );
+    println!(
+        "Run {} to start testing your exercises",
+        "torchlings test".bright_cyan()
+    );
+
+    Ok(())
+}
+
+fn run_tests(exercises_path: &Path, verbose: bool) -> Result<()> {
+    print_test_header();
+
+    // Check if exercises directory exists
+    if !exercises_path.exists() {
+        println!("{}", "Exercises directory does not exist!".bright_red());
+        println!(
+            "Run {} to initialize the project",
+            "torchlings init".bright_cyan()
+        );
+        return Ok(());
+    }
+
     let python_files = find_python_files(exercises_path)?;
     if python_files.is_empty() {
         println!(
             "{}",
             "No Python files found in exercises directory!".bright_red()
         );
+        println!(
+            "Run {} to initialize the project",
+            "torchlings init".bright_cyan()
+        );
         return Ok(());
     }
 
-    let mut passed = 0;
-    let mut failed = 0;
-    let mut failed_files = Vec::new();
-
-    for file in python_files {
-        let success = run_python_file(&file, verbose)?;
-        if success {
-            println!(
-                "{} {}",
-                "✅".bright_green(),
-                file.display().to_string().bright_green()
-            );
-            passed += 1;
-        } else {
-            println!(
-                "{} {}",
-                "❌".bright_red(),
-                file.display().to_string().bright_red()
-            );
-            failed += 1;
-            failed_files.push(file);
-        }
-    }
-
-    println!();
-    println!("{}", "=== Test Summary ===".bright_yellow().bold());
-    if failed == 0 {
-        println!("{} All {} tests passed! 🎉", "✅".bright_green(), passed);
-    } else {
-        println!(
-            "{} {} passed, {} failed",
-            if passed > 0 { "✅" } else { "" },
-            passed.to_string().bright_green(),
-            failed.to_string().bright_red()
-        );
-        if !failed_files.is_empty() {
-            println!();
-            println!("{}", "Failed files:".bright_red().bold());
-            for file in failed_files {
-                println!("  {} {}", "❌".bright_red(), file.display());
-            }
-        }
-    }
+    // Run pytest on the entire directory
+    let success = run_pytest_on_directory(exercises_path, verbose)?;
+    print_directory_test_summary(success, python_files.len());
 
     Ok(())
+}
+
+fn run_pytest_on_directory(exercises_path: &Path, verbose: bool) -> Result<bool> {
+    println!("Running pytest on directory: {}", exercises_path.display());
+
+    match venv::run_pytest(Some(exercises_path.to_str().unwrap())) {
+        Ok(()) => Ok(true),
+        Err(venv::SetupError::CommandFailed(_)) => Ok(false),
+        Err(e) => {
+            if verbose {
+                eprintln!("pytest execution error: {:?}", e);
+            }
+            anyhow::bail!("Failed to run pytest: {:?}", e)
+        }
+    }
+}
+
+fn print_test_header() {
+    println!("{}", "Torchlings Test Runner".bright_yellow().bold());
+    println!("{}", "=======================".bright_yellow());
+    println!();
+}
+
+fn print_directory_test_summary(success: bool, file_count: usize) {
+    println!();
+    println!("{}", "=== Test Summary ===".bright_yellow().bold());
+
+    if success {
+        println!(
+            "{} All tests passed across {} Python files! 🎉",
+            "✅".bright_green(),
+            file_count
+        );
+    } else {
+        println!(
+            "{} Some tests failed across {} Python files",
+            "❌".bright_red(),
+            file_count
+        );
+        println!("Run with {} for detailed output", "--verbose".bright_cyan());
+    }
 }
 
 fn find_python_files(exercises_path: &Path) -> Result<Vec<PathBuf>> {
     if !exercises_path.exists() {
         anyhow::bail!(
-            "Exercises directory does not exist: {}",
+            "Exercises directory does not exist: {}\nRun 'torchlings init' to create it.",
             exercises_path.display()
         );
     }
 
-    fn is_unwanted(entry: &DirEntry) -> bool {
-        entry
-            .path()
-            .components()
-            .any(|c| matches!(c.as_os_str().to_str(), Some(s) if s.starts_with('.') || s == "venv" || s == ".venv"))
-    }
-
-    let mut python_files = Vec::new();
-
-    for entry in WalkDir::new(exercises_path)
+    let python_files: Vec<PathBuf> = WalkDir::new(exercises_path)
         .into_iter()
-        .filter_entry(|e| !is_unwanted(e))
-        .filter_map(|e| e.ok())
-        .filter(|e| e.file_type().is_file())
-        .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("py"))
-    {
-        python_files.push(entry.path().to_path_buf());
-    }
+        .filter_entry(|entry| !is_ignored_directory(entry))
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| entry.file_type().is_file())
+        .filter(|entry| is_python_file(entry.path()))
+        .map(|entry| entry.path().to_path_buf())
+        .collect();
 
-    python_files.sort();
     Ok(python_files)
 }
 
-fn run_python_file(file_path: &Path, verbose: bool) -> Result<bool> {
-    if verbose {
-        println!("Running: {}", file_path.display());
-    }
+fn is_ignored_directory(entry: &DirEntry) -> bool {
+    entry.path().components().any(|component| {
+        matches!(
+            component.as_os_str().to_str(),
+            Some(name) if name.starts_with('.') ||
+                         name == "venv" ||
+                         name == "__pycache__" ||
+                         name.ends_with("-venv")
+        )
+    })
+}
 
-    let output = StdCommand::new("python3")
-        .args(&["-m", "pytest", "-q", "--maxfail=1"])
-        .arg(file_path)
-        .output()
-        .context("failed to spawn pytest")?;
-
-    if verbose {
-        println!("STDOUT:\n{}", String::from_utf8_lossy(&output.stdout));
-        eprintln!("STDERR:\n{}", String::from_utf8_lossy(&output.stderr));
-    }
-
-    Ok(output.status.success())
+fn is_python_file(path: &Path) -> bool {
+    path.extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| ext == "py")
+        .unwrap_or(false)
 }
