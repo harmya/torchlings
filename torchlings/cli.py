@@ -4,11 +4,14 @@ from torchlings.venv import setup_python_environment
 import click
 from importlib import resources
 import shutil
+from torchlings.runner import Runner
 
-@click.group(context_settings={"help_option_names": ["-h", "--help"]})
+@click.group(
+    context_settings={"help_option_names": ["-h", "--help"]},
+    name="torchlings",
+)
 def cli():
     pass
-
 
 @cli.command("init")
 @click.option(
@@ -51,6 +54,18 @@ def init_cmd(exercises_path: Path):
         f"Run {click.style('torchlings test', fg='cyan')} to start testing your exercises."
     )
 
+@cli.command("run")
+@click.option(
+    "--exercises-path",
+    "-e",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path("exercises"),
+    show_default=True,
+    help="Path to exercises directory",
+)
+def run_cmd(exercises_path: Path):
+    """Launch the interactive testing interface."""
+    print("Running...")
 
 def main():
     print_banner()
