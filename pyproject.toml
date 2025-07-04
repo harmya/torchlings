@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torchlings"
-version = "0.1.2"                       
+version = "0.1.4"                       
 description = "Exercises to help you get used to reading and writing PyTorch code"
 readme = "README.md"
 license = {text = "MIT"}
@@ -29,3 +29,10 @@ packages = ["torchlings", "torchlings.exercises"]
 
 [tool.pytest.ini_options]
 python_files = ["*.py"]
+
+[dependency-groups]
+dev = [
+    "build>=1.2.2.post1",
+    "setuptools>=80.9.0",
+    "wheel>=0.45.1",
+]

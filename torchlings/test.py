@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
-from utils import _run
-from venv import VENV_NAME
+from .utils import _run
+from .venv import VENV_NAME
 
 
 def run_pytest(target: str | None = None) -> bool:

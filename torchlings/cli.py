@@ -1,6 +1,6 @@
 from pathlib import Path
-from pretty import print_banner
-from venv import setup_python_environment
+from .pretty import print_banner
+from .venv import setup_python_environment
 import click
 
 
@@ -33,6 +33,9 @@ def init_cmd(exercises_path: Path):
     )
 
 
-if __name__ == "__main__":
+def main():
     print_banner()
     cli()
+
+if __name__ == "__main__":
+    main()

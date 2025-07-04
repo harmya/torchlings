@@ -7,4 +7,4 @@
 sol*
 .env*
 dist/
-src/torchlings.egg-info/
+torchlings.egg-info/
