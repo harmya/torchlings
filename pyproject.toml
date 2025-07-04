@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torchlings"
-version = "0.1.1"
+version = "0.1.2"                       
 description = "Exercises to help you get used to reading and writing PyTorch code"
 readme = "README.md"
 license = {text = "MIT"}
@@ -18,14 +18,14 @@ dependencies = [
     "twine>=6.1.0",
 ]
 
-[tool.pytest.ini_options]
-python_files = ["*.py"]
-
 [project.scripts]
-torchlings = "torchlings.main:cli"
+torchlings = "torchlings.cli:main"
+
+[tool.setuptools]
+packages = ["torchlings", "torchlings.exercises"]
 
 [tool.setuptools.package-data]
 "torchlings.exercises" = ["**/*.py"]
 
-[tool.setuptools.packages.find]
-where = ["src"]
+[tool.pytest.ini_options]
+python_files = ["*.py"]
