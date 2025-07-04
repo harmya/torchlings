@@ -5,3 +5,6 @@
 .DS_Store
 **/.pytest_cache/
 sol*
+.env
+dist/
+src/torchlings.egg-info/

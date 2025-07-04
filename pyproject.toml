@@ -1,15 +1,31 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "torchlings"
-version = "0.1.0"
-description = "Add your description here"
+version = "0.1.1"
+description = "Exercises to help you get used to reading and writing PyTorch code"
 readme = "README.md"
-requires-python = ">=3.13"
+license = {text = "MIT"}
+authors = [{name = "Harmya Bhatt", email = "harmyacs@gmail.com"}]
+requires-python = ">=3.11"
 dependencies = [
     "click>=8.2.1",
     "numpy>=2.3.1",
     "pytest-xdist>=3.8.0",
     "torch>=2.7.1",
+    "twine>=6.1.0",
 ]
 
 [tool.pytest.ini_options]
 python_files = ["*.py"]
+
+[project.scripts]
+torchlings = "torchlings.main:cli"
+
+[tool.setuptools.package-data]
+"torchlings.exercises" = ["**/*.py"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
