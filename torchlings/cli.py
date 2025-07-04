@@ -1,6 +1,6 @@
 from pathlib import Path
-from .pretty import print_banner
-from .venv import setup_python_environment
+from torchlings.pretty import print_banner
+from torchlings.venv import setup_python_environment
 import click
 
 

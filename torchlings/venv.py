@@ -1,7 +1,7 @@
 import shutil
 from pathlib import Path
 from typing import List
-from .utils import _run
+from torchlings.utils import _run
 import os
 import click
 
