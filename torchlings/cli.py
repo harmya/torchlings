@@ -2,7 +2,8 @@ from pathlib import Path
 from torchlings.pretty import print_banner
 from torchlings.venv import setup_python_environment
 import click
-
+from importlib import resources
+import shutil
 
 @click.group(context_settings={"help_option_names": ["-h", "--help"]})
 def cli():
@@ -22,8 +23,26 @@ def init_cmd(exercises_path: Path):
     """Initialise the exercises directory & Python environment."""
     if not exercises_path.exists():
         exercises_path.mkdir(parents=True, exist_ok=True)
-        click.echo(f"📁 Created exercises directory: {exercises_path}")
+    
+    try:
+        import torchlings.exercises
+        exercises_package = resources.files(torchlings.exercises)
+        
+        for directory in exercises_package.iterdir():
+            if not directory.is_dir():
+                continue
+            
+            topic_dir = exercises_path / directory.name
+            topic_dir.mkdir(parents=True, exist_ok=True)
 
+            for file in directory.iterdir():
+                if file.name.endswith('.py') and file.name != "__init__.py":
+                    shutil.copy2(file, topic_dir / file.name)
+                
+    except Exception as e:
+        click.echo(f"⚠️  Warning: Could not copy exercise files: {e}")
+
+    click.echo(f"📁 Created exercises directory: {exercises_path}")
     click.echo(click.style("Setting up Python environment…", fg="cyan"))
     setup_python_environment(exercises_path)
 

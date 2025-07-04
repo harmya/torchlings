@@ -69,3 +69,14 @@ def setup_python_environment(exercises_path: Path) -> None:
         install_requirements()
 
     click.secho("✅ Python environment ready!", fg="green")
+
+
+def initialise_exercises_directory(exercises_path: Path) -> None:
+    """Initialise the exercises directory & Python environment."""
+    if not exercises_path.exists():
+        exercises_path.mkdir(parents=True, exist_ok=True)
+        click.echo(f"📁 Created exercises directory: {exercises_path}")
+
+    click.echo(click.style("Setting up Python environment…", fg="cyan"))
+    setup_python_environment(exercises_path)
+
