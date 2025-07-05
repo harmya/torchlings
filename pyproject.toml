@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "torchlings"
-version = "0.1.4"                       
+version = "0.1.7"                       
 description = "Exercises to help you get used to reading and writing PyTorch code"
 readme = "README.md"
 license = {text = "MIT"}
@@ -17,8 +17,7 @@ dependencies = [
     "pytest-xdist>=3.8.0",
     "torch>=2.7.1",
     "twine>=6.1.0",
-    "watchdog>=6.0.0",
-    "watchfiles>=1.1.0",
+    "watchfiles>=0.18.0",
 ]
 
 [project.scripts]
