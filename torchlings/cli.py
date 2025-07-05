@@ -9,6 +9,7 @@ from torchlings.runner import Runner
 @click.group(
     context_settings={"help_option_names": ["-h", "--help"]},
     name="torchlings",
+    invoke_without_command=True,
 )
 def cli():
     pass
@@ -65,11 +66,11 @@ def init_cmd(exercises_path: Path):
 )
 def run_cmd(exercises_path: Path):
     """Launch the interactive testing interface."""
-    print_banner()
     runner = Runner(exercises_path=Path("sol_init"))
     runner.run()
 
 def main():
+    print_banner()
     cli()
 
 if __name__ == "__main__":
