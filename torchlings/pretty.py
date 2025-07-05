@@ -11,7 +11,6 @@ BANNER = (
     "                                           |___/      "
 )
 
-WELCOME_MESSAGE = "Welcome to the exercises!"
 
 
 def print_banner():
@@ -20,4 +19,6 @@ def print_banner():
 
 
 def print_welcome_message():
-    click.echo(click.style(WELCOME_MESSAGE, fg="bright_yellow"))
+    click.echo(click.style("Welcome to the torchlings! These exercises are designed to help get used to writing and running PyTorch code.", fg="bright_yellow"))
+    click.echo(click.style("torchlings takes care of everything! Just write your code and save it :)", fg="bright_yellow"))
+    click.echo(click.style(f"To get started, initilize the exercises with {click.style('torchlings init', fg='blue', bold=True)}", fg="bright_yellow"))

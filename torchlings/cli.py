@@ -1,5 +1,5 @@
 from pathlib import Path
-from torchlings.pretty import print_banner
+from torchlings.pretty import print_banner, print_welcome_message
 from torchlings.venv import setup_python_environment
 import click
 from importlib import resources
@@ -52,7 +52,7 @@ def init_cmd(exercises_path: Path):
 
     click.secho("\n🚀 Torchlings initialised successfully!", fg="green", bold=True)
     click.echo(
-        f"Run {click.style('torchlings test', fg='cyan')} to start testing your exercises."
+        f"Run {click.style('torchlings run', fg='cyan')} to start testing your exercises."
     )
 
 @cli.command("run")
@@ -71,6 +71,7 @@ def run_cmd(exercises_path: Path):
 
 def main():
     print_banner()
+    print_welcome_message()
     cli()
 
 if __name__ == "__main__":

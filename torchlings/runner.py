@@ -5,6 +5,14 @@ from torchlings.venv import VENV_NAME
 from watchfiles import watch
 import click
 
+CONTROLS_DESCRIPTION = {
+    "n": "Go to next exercise",
+    "q": "Quit torchlings",
+    "h": "Show help message",
+    "t": "Run the current exercise",
+    "l": "List all exercises",
+}
+
 class Runner:
     def __init__(self, exercises_path: Path):
         self.current_index = 0
@@ -56,8 +64,10 @@ class Runner:
                       empty_char=click.style('░', fg="red"),
                       bar_template='%(label)s  %(bar)s  %(info)s',
                       show_percent=True,
-                      show_pos=True) as bar:
+                      show_pos=True,
+                      ) as bar:
             
+            bar.update(self.current_index)
             click.echo()
             click.echo(click.style("─" * 50, fg="white"))
             for _ in bar:
@@ -66,7 +76,6 @@ class Runner:
                 result = self.run_pytest(str(self.exercises[self.current_index]))
                 if not result:
                     self.watch_file(self.exercises[self.current_index])
-
                 self.go_to_next_exercise()
     
     def watch_file(self, exercise_path: Path):
@@ -75,7 +84,7 @@ class Runner:
             result = self.run_pytest(str(TARGET))
             if result:
                 break
-    
+        
     def run_pytest(self, target: str | None = None) -> bool:
         """Run pytest inside the venv. Returns True if tests succeed."""
         env = os.environ.copy()
