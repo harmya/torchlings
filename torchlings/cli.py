@@ -65,7 +65,7 @@ def init_cmd(exercises_path: Path):
 )
 def run_cmd(exercises_path: Path):
     """Launch the interactive testing interface."""
-    print("Running...")
+    print_banner()
     runner = Runner(exercises_path=Path("sol_init"))
     runner.run()
 

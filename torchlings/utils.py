@@ -24,10 +24,11 @@ def find_python_files(exercises_path: Path) -> List[Path]:
 
 
 def _run(
-    cmd: List[str], *, env: dict | None = None, check: bool = False, **popen_kwargs
+    cmd: List[str], *, env: dict | None = None, check: bool = False, display_name: str | None = None, **popen_kwargs
 ):
     """Wrapper around subprocess.run that prints & returns CompletedProcess."""
-    click.echo(click.style("$ " + " ".join(cmd), fg="blue"), err=True)
+    display_name = display_name or "$ running..."
+    click.echo(click.style(f"{display_name} ", fg="blue"), err=True)
     result = subprocess.run(
         cmd, env=env, text=True, capture_output=True, **popen_kwargs
     )

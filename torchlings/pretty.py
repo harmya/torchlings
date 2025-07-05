@@ -15,7 +15,8 @@ WELCOME_MESSAGE = "Welcome to the exercises!"
 
 
 def print_banner():
-    click.echo(click.style(BANNER, fg="bright_yellow"))
+    click.echo(click.style(BANNER, fg="bright_yellow"), nl=True)
+    click.echo()
 
 
 def print_welcome_message():

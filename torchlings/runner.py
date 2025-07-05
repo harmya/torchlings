@@ -3,12 +3,14 @@ from pathlib import Path
 from torchlings.utils import _run
 from torchlings.venv import VENV_NAME
 from watchfiles import watch
+import click
 
 class Runner:
     def __init__(self, exercises_path: Path):
         self.current_index = 0
         self.exercises_path = exercises_path
         self.exercises = self._discover_exercises()
+        self.total_exercises = len(self.exercises)
         self.progress_file = exercises_path / ".torchlings_progress"
         self._load_progress()
 
@@ -24,6 +26,12 @@ class Runner:
         with open(self.progress_file, "w") as f:
             f.write(str(self.current_index))
     
+    def go_to_next_exercise(self):
+        self.current_index += 1
+        if self.current_index >= self.total_exercises:
+            self.current_index = -1
+        self._save_progress()
+    
     def _discover_exercises(self) -> list[Path]:
         """Discover all exercises in the exercises path."""
         exercises = []
@@ -37,11 +45,29 @@ class Runner:
 
                 exercise_in_topic.sort()
                 exercises.extend(exercise_in_topic)
-        print(exercises)
+
         return exercises
-    
+
+
     def run(self):
-        self.watch_file(self.exercises[self.current_index])
+        with click.progressbar(range(self.total_exercises), 
+                      label=click.style("Progress", fg="yellow", bold=True),
+                      fill_char=click.style('█', fg="green"),
+                      empty_char=click.style('░', fg="red"),
+                      bar_template='%(label)s  %(bar)s  %(info)s',
+                      show_percent=True,
+                      show_pos=True) as bar:
+            
+            click.echo()
+            click.echo(click.style("─" * 50, fg="white"))
+            for _ in bar:
+                click.echo()
+                click.echo(click.style(f"Working on {self.exercises[self.current_index]}", fg="yellow", bold=True))
+                result = self.run_pytest(str(self.exercises[self.current_index]))
+                if not result:
+                    self.watch_file(self.exercises[self.current_index])
+
+                self.go_to_next_exercise()
     
     def watch_file(self, exercise_path: Path):
         TARGET = exercise_path.resolve()
@@ -60,5 +86,5 @@ class Runner:
         if target:
             cmd.append(target)
 
-        result = _run(cmd, env=env)
+        result = _run(cmd, env=env, display_name=f"Testing {target}")
         return result.returncode == 0
