@@ -26,6 +26,7 @@ EXERCISE_ORDER = [
     "10_advanced",
 ]
 
+
 class Runner:
     def __init__(self, exercises_path: Path):
         self.current_index = 0
@@ -46,13 +47,13 @@ class Runner:
         """Save the progress to the progress file."""
         with open(self.progress_file, "w") as f:
             f.write(str(self.current_index))
-    
+
     def go_to_next_exercise(self):
         self.current_index += 1
         if self.current_index >= self.total_exercises:
             self.current_index = -1
         self._save_progress()
-    
+
     def _discover_exercises(self) -> list[Path]:
         """Discover all exercises in the exercises path."""
         exercises = []
@@ -63,9 +64,9 @@ class Runner:
                 for exercise in dir.iterdir():
                     if exercise.is_file() and exercise.suffix == ".py":
                         exercise_in_topic.append(exercise)
-    
+
                 exercises.extend(exercise_in_topic)
-        
+
         def exercise_order_key(x):
             group_idx = len(EXERCISE_ORDER)
             for i, name in enumerate(EXERCISE_ORDER):
@@ -77,39 +78,45 @@ class Runner:
             except Exception:
                 file_num = 0
             return (group_idx, file_num)
+
         exercises.sort(key=exercise_order_key)
 
         return exercises
 
-
     def run(self):
-        with click.progressbar(range(self.total_exercises), 
-                      label=click.style("Progress", fg="yellow", bold=True),
-                      fill_char=click.style('█', fg="green"),
-                      empty_char=click.style('░', fg="red"),
-                      bar_template='%(label)s  %(bar)s  %(info)s',
-                      show_percent=True,
-                      show_pos=True,
-                      ) as bar:
-            
+        with click.progressbar(
+            range(self.total_exercises),
+            label=click.style("Progress", fg="yellow", bold=True),
+            fill_char=click.style("█", fg="green"),
+            empty_char=click.style("░", fg="red"),
+            bar_template="%(label)s  %(bar)s  %(info)s",
+            show_percent=True,
+            show_pos=True,
+        ) as bar:
             bar.update(self.current_index)
             click.echo()
             click.echo(click.style("─" * 50, fg="white"))
             for _ in bar:
                 click.echo()
-                click.echo(click.style(f"Working on {self.exercises[self.current_index]}", fg="yellow", bold=True))
+                click.echo(
+                    click.style(
+                        f"Working on {self.exercises[self.current_index]}",
+                        fg="yellow",
+                        bold=True,
+                    )
+                )
                 result = self.run_pytest(str(self.exercises[self.current_index]))
                 if not result:
                     self.watch_file(self.exercises[self.current_index])
                 self.go_to_next_exercise()
-    
+
     def watch_file(self, exercise_path: Path):
         TARGET = exercise_path.resolve()
         for _ in watch(TARGET, debounce=1):
             result = self.run_pytest(str(TARGET))
             if result:
                 break
-        
+
     def run_pytest(self, target: str | None = None) -> bool:
         """Run pytest inside the venv. Returns True if tests succeed."""
         env = os.environ.copy()

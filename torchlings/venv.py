@@ -79,4 +79,3 @@ def initialise_exercises_directory(exercises_path: Path) -> None:
 
     click.echo(click.style("Setting up Python environment…", fg="cyan"))
     setup_python_environment(exercises_path)
-

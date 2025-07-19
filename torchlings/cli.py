@@ -6,6 +6,7 @@ from importlib import resources
 import shutil
 from torchlings.runner import Runner
 
+
 @click.group(
     context_settings={"help_option_names": ["-h", "--help"]},
     name="torchlings",
@@ -13,6 +14,7 @@ from torchlings.runner import Runner
 )
 def cli():
     pass
+
 
 @cli.command("init")
 @click.option(
@@ -27,22 +29,23 @@ def init_cmd(exercises_path: Path):
     """Initialise the exercises directory & Python environment."""
     if not exercises_path.exists():
         exercises_path.mkdir(parents=True, exist_ok=True)
-    
+
     try:
         import torchlings.exercises
+
         exercises_package = resources.files(torchlings.exercises)
-        
+
         for directory in exercises_package.iterdir():
             if not directory.is_dir():
                 continue
-            
+
             topic_dir = exercises_path / directory.name
             topic_dir.mkdir(parents=True, exist_ok=True)
 
             for file in directory.iterdir():
-                if file.name.endswith('.py') and file.name != "__init__.py":
+                if file.name.endswith(".py") and file.name != "__init__.py":
                     shutil.copy2(file, topic_dir / file.name)
-                
+
     except Exception as e:
         click.echo(f"⚠️  Warning: Could not copy exercise files: {e}")
 
@@ -54,6 +57,7 @@ def init_cmd(exercises_path: Path):
     click.echo(
         f"Run {click.style('torchlings run', fg='cyan')} to start testing your exercises."
     )
+
 
 @cli.command("run")
 @click.option(
@@ -69,10 +73,12 @@ def run_cmd(exercises_path: Path):
     runner = Runner(exercises_path=Path("exercises"))
     runner.run()
 
+
 def main():
     print_banner()
     print_welcome_message()
     cli()
+
 
 if __name__ == "__main__":
     main()
