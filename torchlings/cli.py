@@ -60,13 +60,13 @@ def init_cmd(exercises_path: Path):
     "--exercises-path",
     "-e",
     type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
-    default=Path("sol_init"),
+    default=Path("exercises"),
     show_default=True,
     help="Path to exercises directory",
 )
 def run_cmd(exercises_path: Path):
     """Launch the interactive testing interface."""
-    runner = Runner(exercises_path=Path("sol_init"))
+    runner = Runner(exercises_path=Path("exercises"))
     runner.run()
 
 def main():
