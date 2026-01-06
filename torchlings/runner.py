@@ -13,6 +13,19 @@ CONTROLS_DESCRIPTION = {
     "l": "List all exercises",
 }
 
+EXERCISE_ORDER = [
+    "01_tensors",
+    "02_autograd",
+    "03_nn",
+    "04_loss",
+    "05_data",
+    "06_train",
+    "07_gpu",
+    "08_cv",
+    "09_text",
+    "10_advanced",
+]
+
 class Runner:
     def __init__(self, exercises_path: Path):
         self.current_index = 0
@@ -50,9 +63,21 @@ class Runner:
                 for exercise in dir.iterdir():
                     if exercise.is_file() and exercise.suffix == ".py":
                         exercise_in_topic.append(exercise)
-
-                exercise_in_topic.sort()
+    
                 exercises.extend(exercise_in_topic)
+        
+        def exercise_order_key(x):
+            group_idx = len(EXERCISE_ORDER)
+            for i, name in enumerate(EXERCISE_ORDER):
+                if name in str(x):
+                    group_idx = i
+                    break
+            try:
+                file_num = int(x.stem)
+            except Exception:
+                file_num = 0
+            return (group_idx, file_num)
+        exercises.sort(key=exercise_order_key)
 
         return exercises
 
