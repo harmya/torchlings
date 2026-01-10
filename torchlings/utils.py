@@ -24,7 +24,12 @@ def find_python_files(exercises_path: Path) -> List[Path]:
 
 
 def _run(
-    cmd: List[str], *, env: dict | None = None, check: bool = False, display_name: str | None = None, **popen_kwargs
+    cmd: List[str],
+    *,
+    env: dict | None = None,
+    check: bool = False,
+    display_name: str | None = None,
+    **popen_kwargs,
 ):
     """Wrapper around subprocess.run that prints & returns CompletedProcess."""
     display_name = display_name or "$ running..."
