@@ -1,3 +1,4 @@
+# Detaching tensors from the computation graph
 import torch
 
 
@@ -10,17 +11,22 @@ def detach_example():
     # TODO: Create z by detaching y from the computation graph
     z = None
 
-    # This should work without error
-    w = z**2  # z has no gradient history
+    # This should work without error because z has no gradient history
+    w = z**2
 
-    # TODO: Compute gradient of y with respect to x
-    y.sum().backward()
+    # TODO: Compute the gradient of y.sum() with respect to x
+    # (fill in the backward call)
 
     return x.grad, z.requires_grad
 
 
-# Test
+"""
+----------------------TESTS-------------------------
+------------------DO NOT TOUCH TESTS----------------
+"""
+
+
 def test_detach():
     grad, requires_grad = detach_example()
     assert grad.tolist() == [2.0, 4.0, 6.0]
-    assert requires_grad == False
+    assert requires_grad is False

@@ -22,7 +22,7 @@ EXERCISE_ORDER = [
     "06_train",
     "07_gpu",
     "08_cv",
-    "09_text",
+    "09_compile",
     "10_advanced",
 ]
 
