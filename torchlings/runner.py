@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 from torchlings.utils import _run
 from torchlings.venv import VENV_NAME
+from torchlings.modal_runner import is_gpu_exercise, run_on_modal, print_modal_setup_guide, is_modal_installed
 from watchfiles import watch
 import click
 
@@ -119,6 +120,9 @@ class Runner:
 
     def run_pytest(self, target: str | None = None) -> bool:
         """Run pytest inside the venv. Returns True if tests succeed."""
+        if target and is_gpu_exercise(target) and not self._has_cuda():
+            return run_on_modal(target)
+
         env = os.environ.copy()
         env["VIRTUAL_ENV"] = VENV_NAME
         env["PATH"] = str(Path(VENV_NAME) / "bin") + os.pathsep + env["PATH"]
@@ -129,3 +133,18 @@ class Runner:
 
         result = _run(cmd, env=env, display_name=f"Testing {target}")
         return result.returncode == 0
+
+    def _has_cuda(self) -> bool:
+        """Check if CUDA is available in the exercise venv."""
+        if hasattr(self, "_cuda_available"):
+            return self._cuda_available
+        env = os.environ.copy()
+        env["VIRTUAL_ENV"] = VENV_NAME
+        env["PATH"] = str(Path(VENV_NAME) / "bin") + os.pathsep + env["PATH"]
+        result = _run(
+            ["python", "-c", "import torch; print(torch.cuda.is_available())"],
+            env=env,
+            display_name="Checking CUDA",
+        )
+        self._cuda_available = result.stdout.strip() == "True"
+        return self._cuda_available
