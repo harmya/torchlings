@@ -1,14 +1,10 @@
 """Run GPU exercises on Modal when CUDA is not available locally."""
 
 import subprocess
-import shutil
-import tempfile
-import base64
 import os
 import click
 
 MODAL_SIGNUP_URL = "https://modal.com"
-
 GPU_SECTIONS = {"07_gpu", "09_compile", "10_advanced"}
 
 
@@ -18,27 +14,22 @@ def is_gpu_exercise(exercise_path) -> bool:
     return any(section in parts for section in GPU_SECTIONS)
 
 
-def is_modal_installed() -> bool:
-    return shutil.which("modal") is not None
+def _check_modal_available() -> tuple[bool, str]:
+    """Check if Modal is installed and authenticated. Returns (ok, message)."""
+    try:
+        import modal  # noqa: F401
+    except ImportError:
+        return False, "not_installed"
 
-
-def is_modal_authenticated() -> bool:
     result = subprocess.run(
         ["modal", "profile", "current"],
         capture_output=True,
         text=True,
     )
-    return result.returncode == 0
+    if result.returncode != 0:
+        return False, "not_authenticated"
 
-
-def check_cuda_available() -> bool:
-    """Check if CUDA is available without importing torch in the main process."""
-    result = subprocess.run(
-        ["python3", "-c", "import torch; print(torch.cuda.is_available())"],
-        capture_output=True,
-        text=True,
-    )
-    return result.stdout.strip() == "True"
+    return True, "ok"
 
 
 def print_modal_setup_guide():
@@ -67,85 +58,61 @@ def print_modal_setup_guide():
     click.echo()
 
 
-def _make_modal_script(exercise_b64: str) -> str:
-    return f'''import modal
-import base64
-import tempfile
-import subprocess
-import os
-
-app = modal.App("torchlings")
-image = modal.Image.debian_slim(python_version="3.12").pip_install(
-    "torch", "pytest", "numpy", "triton"
-)
-
-EXERCISE_B64 = "{exercise_b64}"
-
-@app.function(gpu="T4", image=image, timeout=180)
-def run_exercise():
-    content = base64.b64decode(EXERCISE_B64).decode("utf-8")
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".py", delete=False, dir="/tmp"
-    ) as f:
-        f.write(content)
-        path = f.name
-
-    result = subprocess.run(
-        ["python", "-m", "pytest", path, "-vv", "--tb=long", "--no-header", "--color=yes"],
-        capture_output=True,
-        text=True,
-    )
-    os.unlink(path)
-    output = result.stdout
-    if result.stderr:
-        output += "\\n" + result.stderr
-    return output, result.returncode
-
-@app.local_entrypoint()
-def main():
-    output, code = run_exercise.remote()
-    print(output)
-    raise SystemExit(code)
-'''
-
-
 def run_on_modal(exercise_path) -> bool:
     """Run an exercise on Modal GPU. Returns True if tests pass."""
-    if not is_modal_installed():
-        print_modal_setup_guide()
-        return False
+    available, status = _check_modal_available()
 
-    if not is_modal_authenticated():
-        click.echo(
-            click.style(
-                "Modal is installed but not authenticated. Run: ",
-                fg="yellow",
+    if not available:
+        if status == "not_installed":
+            print_modal_setup_guide()
+        else:
+            click.echo(
+                click.style("Modal is installed but not authenticated. Run: ", fg="yellow")
+                + click.style("modal setup", fg="cyan", bold=True)
             )
-            + click.style("modal setup", fg="cyan", bold=True)
-        )
         return False
 
-    click.echo(
-        click.style("Running on Modal GPU...", fg="cyan", bold=True)
-    )
+    import modal
+
+    click.echo(click.style("Running on Modal GPU...", fg="cyan", bold=True))
 
     with open(exercise_path) as f:
         exercise_content = f.read()
 
-    exercise_b64 = base64.b64encode(exercise_content.encode()).decode()
-    script = _make_modal_script(exercise_b64)
+    app = modal.App("torchlings")
+    image = modal.Image.debian_slim(python_version="3.12").pip_install(
+        "torch", "pytest", "numpy", "triton"
+    )
 
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".py", delete=False, dir="/tmp", prefix="torchlings_modal_"
-    ) as f:
-        f.write(script)
-        script_path = f.name
+    @app.function(gpu="T4", image=image, timeout=180)
+    def _run_exercise(content: str) -> tuple[str, int]:
+        import tempfile
+        import subprocess as sp
 
-    try:
-        result = subprocess.run(
-            ["modal", "run", script_path],
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", delete=False, dir="/tmp"
+        ) as f:
+            f.write(content)
+            path = f.name
+
+        result = sp.run(
+            [
+                "python", "-m", "pytest", path,
+                "-vv", "--tb=long", "--no-header", "--color=yes",
+            ],
+            capture_output=True,
             text=True,
         )
-        return result.returncode == 0
-    finally:
-        os.unlink(script_path)
+        os.unlink(path)
+        output = result.stdout
+        if result.stderr:
+            output += "\n" + result.stderr
+        return output, result.returncode
+
+    with app.run():
+        output, returncode = _run_exercise.remote(exercise_content)
+
+    if output:
+        click.echo(output.rstrip())
+
+    return returncode == 0

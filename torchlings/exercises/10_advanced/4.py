@@ -18,8 +18,13 @@ def export_simple_model():
     )
     model.eval()
     # TODO: Export the model using torch.export.export
-    # You need to provide example inputs
-    example_input = (torch.randn(1, 4),)
+    # The batch dimension should be dynamic so the exported model
+    # works with any batch size. Use torch.export.Dim to mark it.
+    # Note: nn.Sequential's forward arg is called "input"
+    # Hint: batch = torch.export.Dim("batch", min=1)
+    #       dynamic_shapes = {"input": {0: batch}}
+    # Use batch_size >= 2 in the example input (size 1 gets specialized)
+    example_input = (torch.randn(2, 4),)
     exported = None
     return exported
 
@@ -27,8 +32,10 @@ def export_simple_model():
 def export_and_run():
     model = nn.Sequential(nn.Linear(4, 2))
     model.eval()
-    example_input = (torch.randn(1, 4),)
-    # TODO: Export the model
+    batch = torch.export.Dim("batch", min=1)
+    example_input = (torch.randn(2, 4),)
+    dynamic_shapes = {"input": {0: batch}}
+    # TODO: Export the model with dynamic shapes
     exported = None
     # TODO: Run the exported program with a new input
     x = torch.randn(3, 4)
@@ -37,7 +44,7 @@ def export_and_run():
 
 
 def trace_model():
-    # torch.jit.trace is an older export method, still widely used
+    # torch.jit.trace captures a model by running example input through it
     model = nn.Sequential(nn.Linear(4, 2), nn.ReLU())
     model.eval()
     example_input = torch.randn(1, 4)
@@ -89,7 +96,6 @@ def empty_cache():
 def test_export_simple_model():
     exported = export_simple_model()
     assert exported is not None
-    # Run the exported model
     x = torch.randn(2, 4)
     result = exported.module()(x)
     assert result.shape == torch.Size([2, 2])
