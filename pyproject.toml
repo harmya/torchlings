@@ -23,14 +23,20 @@ dependencies = [
 [project.scripts]
 torchlings = "torchlings.cli:main"
 
-[tool.setuptools]
-packages = ["torchlings", "torchlings.exercises"]
+[tool.setuptools.packages.find]
+include = ["torchlings*"]
 
 [tool.setuptools.package-data]
 "torchlings.exercises" = ["**/*.py"]
 
 [tool.pytest.ini_options]
 python_files = ["*.py"]
+
+[tool.ruff.lint]
+ignore = ["F841"]
+
+[tool.ruff.lint.per-file-ignores]
+"torchlings/exercises/**" = ["F401", "F811", "F841", "E741", "E731"]
 
 [dependency-groups]
 dev = [

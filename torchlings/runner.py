@@ -2,7 +2,11 @@ import os
 from pathlib import Path
 from torchlings.utils import _run
 from torchlings.venv import VENV_NAME
-from torchlings.modal_runner import is_gpu_exercise, run_on_modal, print_modal_setup_guide, is_modal_installed
+from torchlings.modal_runner import (
+    is_gpu_exercise,
+    check_modal_available,
+    print_modal_setup_guide,
+)
 from watchfiles import watch
 import click
 
@@ -121,7 +125,21 @@ class Runner:
     def run_pytest(self, target: str | None = None) -> bool:
         """Run pytest inside the venv. Returns True if tests succeed."""
         if target and is_gpu_exercise(target) and not self._has_cuda():
-            return run_on_modal(target)
+            ok, reason = check_modal_available()
+            if not ok:
+                if reason == "not_installed":
+                    print_modal_setup_guide()
+                else:
+                    click.echo(
+                        click.style(
+                            "Modal is installed but not authenticated. Run: ",
+                            fg="yellow",
+                        )
+                        + click.style("modal setup", fg="cyan", bold=True)
+                    )
+                return False
+
+            return self._run_pytest_on_modal(target)
 
         env = os.environ.copy()
         env["VIRTUAL_ENV"] = VENV_NAME
@@ -133,6 +151,54 @@ class Runner:
 
         result = _run(cmd, env=env, display_name=f"Testing {target}")
         return result.returncode == 0
+
+    def _run_pytest_on_modal(self, target: str) -> bool:
+        """Run a GPU exercise on Modal."""
+        import modal
+
+        click.echo(click.style("Running on Modal GPU...", fg="cyan", bold=True))
+
+        with open(target) as f:
+            exercise_content = f.read()
+
+        app = modal.App("torchlings")
+        image = modal.Image.debian_slim(python_version="3.12").pip_install(
+            "torch", "pytest", "numpy", "triton"
+        )
+
+        @app.function(gpu="T4", image=image, timeout=180)
+        def run_exercise(content: str) -> tuple[str, int]:
+            import tempfile
+            import subprocess
+            import os as _os
+
+            with tempfile.NamedTemporaryFile(
+                mode="w", suffix=".py", delete=False, dir="/tmp"
+            ) as f:
+                f.write(content)
+                path = f.name
+
+            result = subprocess.run(
+                [
+                    "python", "-m", "pytest", path,
+                    "-vv", "--tb=long", "--no-header", "--color=yes",
+                ],
+                capture_output=True,
+                text=True,
+            )
+            _os.unlink(path)
+            output = result.stdout
+            if result.stderr:
+                output += "\n" + result.stderr
+            return output, result.returncode
+
+        with app.run():
+            output, returncode = run_exercise.remote(exercise_content)
+
+        if output:
+            click.echo(output.rstrip())
+
+        return returncode == 0
 
     def _has_cuda(self) -> bool:
         """Check if CUDA is available in the exercise venv."""
