@@ -34,5 +34,5 @@ def gradient_accumulation():
 def test_gradient_accumulation():
     g1, g2, g3 = gradient_accumulation()
     assert g1.tolist() == [2.0, 4.0, 6.0]
-    assert g2.tolist() == [3.0, 16.0, 33.0]  # 2x + 3x^2
+    assert g2.tolist() == [5.0, 16.0, 33.0]  # 2x + 3x^2
     assert g3.tolist() == [1.0, 1.0, 1.0]
