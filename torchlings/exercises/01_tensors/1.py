@@ -1,7 +1,5 @@
+# Tensor basics: creating tensors from values and lists
 import torch
-
-# Tensors are a fundamental data structure in PyTorch.
-# Think of them as a multi-dimensional numpy array which can be used on GPUs.
 
 
 def create_tensor():
@@ -17,8 +15,8 @@ def create_tensor_from_array(array):
 
 
 """
-----------------------TESTS---------------------
----------------DO NOT TOUCH TESTS---------------
+----------------------TESTS-------------------------
+------------------DO NOT TOUCH TESTS----------------
 """
 
 

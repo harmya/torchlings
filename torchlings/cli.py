@@ -70,7 +70,7 @@ def init_cmd(exercises_path: Path):
 )
 def run_cmd(exercises_path: Path):
     """Launch the interactive testing interface."""
-    runner = Runner(exercises_path=Path("exercises"))
+    runner = Runner(exercises_path=exercises_path)
     runner.run()
 
 

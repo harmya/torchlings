@@ -12,11 +12,7 @@ authors = [{name = "Harmya Bhatt", email = "harmyacs@gmail.com"}]
 requires-python = ">=3.11"
 dependencies = [
     "click>=8.2.1",
-    "numpy>=2.3.1",
-    "pip>=25.1.1",
-    "pytest-xdist>=3.8.0",
     "torch>=2.7.1",
-    "twine>=6.1.0",
     "watchfiles>=0.18.0",
 ]
 

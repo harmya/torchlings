@@ -204,13 +204,16 @@ class Runner:
         """Check if CUDA is available in the exercise venv."""
         if hasattr(self, "_cuda_available"):
             return self._cuda_available
+        import subprocess
+
         env = os.environ.copy()
         env["VIRTUAL_ENV"] = VENV_NAME
         env["PATH"] = str(Path(VENV_NAME) / "bin") + os.pathsep + env["PATH"]
-        result = _run(
+        result = subprocess.run(
             ["python", "-c", "import torch; print(torch.cuda.is_available())"],
             env=env,
-            display_name="Checking CUDA",
+            capture_output=True,
+            text=True,
         )
         self._cuda_available = result.stdout.strip() == "True"
         return self._cuda_available

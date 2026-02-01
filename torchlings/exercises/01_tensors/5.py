@@ -1,3 +1,4 @@
+# Reshaping and transposing: changing tensor dimensions
 import torch
 
 
@@ -34,8 +35,8 @@ def transpose_tensor():
 
 
 """
-----------------------TESTS---------------------
----------------DO NOT TOUCH TESTS---------------
+----------------------TESTS-------------------------
+------------------DO NOT TOUCH TESTS----------------
 """
 
 

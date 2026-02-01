@@ -1,3 +1,4 @@
+# Tensor operations: addition, scalar multiplication, matrix multiply
 import torch
 
 
@@ -29,8 +30,8 @@ def matrix_multiply():
 
 
 """
-----------------------TESTS---------------------
----------------DO NOT TOUCH TESTS---------------
+----------------------TESTS-------------------------
+------------------DO NOT TOUCH TESTS----------------
 """
 
 

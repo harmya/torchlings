@@ -30,7 +30,12 @@ def gradient_accumulation():
     return grad1, grad2, grad3
 
 
-# Test
+"""
+----------------------TESTS-------------------------
+------------------DO NOT TOUCH TESTS----------------
+"""
+
+
 def test_gradient_accumulation():
     g1, g2, g3 = gradient_accumulation()
     assert g1.tolist() == [2.0, 4.0, 6.0]

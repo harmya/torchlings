@@ -1,3 +1,4 @@
+# Indexing and slicing: accessing tensor elements
 import torch
 
 
@@ -34,8 +35,8 @@ def slice_tensor():
 
 
 """
-----------------------TESTS---------------------
----------------DO NOT TOUCH TESTS---------------
+----------------------TESTS-------------------------
+------------------DO NOT TOUCH TESTS----------------
 """
 
 
