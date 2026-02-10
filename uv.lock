@@ -390,7 +390,7 @@ wheels = [
 
 [[package]]
 name = "torchlings"
-version = "0.1.20"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "click" },
