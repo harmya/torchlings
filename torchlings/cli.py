@@ -1,4 +1,5 @@
 from pathlib import Path
+from importlib.metadata import version as pkg_version
 from torchlings.pretty import print_banner, print_welcome_message
 from torchlings.venv import setup_python_environment
 import click
@@ -11,6 +12,11 @@ from torchlings.runner import Runner
     context_settings={"help_option_names": ["-h", "--help"]},
     name="torchlings",
     invoke_without_command=True,
+)
+@click.version_option(
+    pkg_version("torchlings"),
+    "-v", "--version",
+    prog_name="torchlings",
 )
 def cli():
     pass
@@ -47,13 +53,13 @@ def init_cmd(exercises_path: Path):
                     shutil.copy2(file, topic_dir / file.name)
 
     except Exception as e:
-        click.echo(f"⚠️  Warning: Could not copy exercise files: {e}")
+        click.echo(f"Warning: Could not copy exercise files: {e}")
 
-    click.echo(f"📁 Created exercises directory: {exercises_path}")
-    click.echo(click.style("Setting up Python environment…", fg="cyan"))
+    click.echo(f"Created exercises directory: {exercises_path}")
+    click.echo(click.style("Setting up Python environment...", fg="cyan"))
     setup_python_environment(exercises_path)
 
-    click.secho("\n🚀 Torchlings initialised successfully!", fg="green", bold=True)
+    click.secho("\nTorchlings initialised successfully!", fg="green", bold=True)
     click.echo(
         f"Run {click.style('torchlings run', fg='cyan')} to start testing your exercises."
     )
@@ -71,6 +77,25 @@ def init_cmd(exercises_path: Path):
 def run_cmd(exercises_path: Path):
     """Launch the interactive testing interface."""
     runner = Runner(exercises_path=exercises_path)
+    runner.run()
+
+
+@cli.command("start")
+@click.argument("folder")
+@click.option(
+    "--exercises-path",
+    "-e",
+    type=click.Path(exists=True, file_okay=False, dir_okay=True, path_type=Path),
+    default=Path("exercises"),
+    show_default=True,
+    help="Path to exercises directory",
+)
+def start_cmd(folder: str, exercises_path: Path):
+    """Start from a specific section and run until the end.
+
+    FOLDER is the section name to start from, e.g. 03_nn or just nn.
+    """
+    runner = Runner(exercises_path=exercises_path, start_from=folder)
     runner.run()
 
 

@@ -33,13 +33,28 @@ EXERCISE_ORDER = [
 
 
 class Runner:
-    def __init__(self, exercises_path: Path):
+    def __init__(self, exercises_path: Path, start_from: str | None = None):
         self.current_index = 0
         self.exercises_path = exercises_path
         self.exercises = self._discover_exercises()
         self.total_exercises = len(self.exercises)
         self.progress_file = exercises_path / ".torchlings_progress"
-        self._load_progress()
+        if start_from:
+            self._start_from(start_from)
+        else:
+            self._load_progress()
+
+    def _start_from(self, folder: str) -> None:
+        """Set progress to the first exercise in the given folder."""
+        for i, ex in enumerate(self.exercises):
+            if folder in str(ex):
+                self.current_index = i
+                self._save_progress()
+                return
+        raise click.ClickException(
+            f"No exercises found matching '{folder}'. "
+            f"Available: {', '.join(EXERCISE_ORDER)}"
+        )
 
     def _load_progress(self) -> None:
         """Load the progress from the progress file."""
