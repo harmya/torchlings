@@ -7,4 +7,6 @@
 sol*
 .env*
 dist/
+build/
 torchlings.egg-info/
+exercises/
