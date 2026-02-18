@@ -220,13 +220,13 @@ class Runner:
         if hasattr(self, "_cuda_available"):
             return self._cuda_available
         import subprocess
+        import sys
 
-        env = os.environ.copy()
-        env["VIRTUAL_ENV"] = VENV_NAME
-        env["PATH"] = str(Path(VENV_NAME) / "bin") + os.pathsep + env["PATH"]
+        venv_python = Path(VENV_NAME) / "bin" / "python"
+        if not venv_python.exists():
+            venv_python = Path(sys.executable)
         result = subprocess.run(
-            ["python", "-c", "import torch; print(torch.cuda.is_available())"],
-            env=env,
+            [str(venv_python), "-c", "import torch; print(torch.cuda.is_available())"],
             capture_output=True,
             text=True,
         )
