@@ -168,52 +168,60 @@ class Runner:
         return result.returncode == 0
 
     def _run_pytest_on_modal(self, target: str) -> bool:
-        """Run a GPU exercise on Modal."""
-        import modal
+        """Run a GPU exercise on Modal via the modal CLI."""
+        import base64
+        import subprocess
+        import tempfile
 
         click.echo(click.style("Running on Modal GPU...", fg="cyan", bold=True))
 
         with open(target) as f:
-            exercise_content = f.read()
+            exercise_b64 = base64.b64encode(f.read().encode()).decode()
 
-        app = modal.App("torchlings")
-        image = modal.Image.debian_slim(python_version="3.12").pip_install(
-            "torch", "pytest", "numpy", "triton"
-        )
+        script = f'''import modal
+import base64, tempfile, subprocess, os
 
-        @app.function(gpu="T4", image=image, timeout=180)
-        def run_exercise(content: str) -> tuple[str, int]:
-            import tempfile
-            import subprocess
-            import os as _os
+app = modal.App("torchlings")
+image = modal.Image.debian_slim(python_version="3.12").pip_install(
+    "torch", "pytest", "numpy", "triton"
+)
 
-            with tempfile.NamedTemporaryFile(
-                mode="w", suffix=".py", delete=False, dir="/tmp"
-            ) as f:
-                f.write(content)
-                path = f.name
+EXERCISE_B64 = "{exercise_b64}"
 
-            result = subprocess.run(
-                [
-                    "python", "-m", "pytest", path,
-                    "-vv", "--tb=long", "--no-header", "--color=yes",
-                ],
-                capture_output=True,
-                text=True,
-            )
-            _os.unlink(path)
-            output = result.stdout
-            if result.stderr:
-                output += "\n" + result.stderr
-            return output, result.returncode
+@app.function(gpu="T4", image=image, timeout=180)
+def run_exercise():
+    content = base64.b64decode(EXERCISE_B64).decode("utf-8")
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".py", delete=False, dir="/tmp") as f:
+        f.write(content)
+        path = f.name
+    result = subprocess.run(
+        ["python", "-m", "pytest", path, "-vv", "--tb=long", "--no-header", "--color=yes"],
+        capture_output=True, text=True,
+    )
+    os.unlink(path)
+    output = result.stdout
+    if result.stderr:
+        output += "\\n" + result.stderr
+    return output, result.returncode
 
-        with app.run():
-            output, returncode = run_exercise.remote(exercise_content)
+@app.local_entrypoint()
+def main():
+    output, code = run_exercise.remote()
+    print(output)
+    raise SystemExit(code)
+'''
 
-        if output:
-            click.echo(output.rstrip())
+        with tempfile.NamedTemporaryFile(
+            mode="w", suffix=".py", delete=False, prefix="torchlings_modal_"
+        ) as f:
+            f.write(script)
+            script_path = f.name
 
-        return returncode == 0
+        try:
+            result = subprocess.run(["modal", "run", script_path])
+            return result.returncode == 0
+        finally:
+            os.unlink(script_path)
 
     def _has_cuda(self) -> bool:
         """Check if CUDA is available in the exercise venv."""

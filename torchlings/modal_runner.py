@@ -1,5 +1,7 @@
 """Run GPU exercises on Modal when CUDA is not available locally."""
 
+import shutil
+import subprocess
 import click
 
 MODAL_SIGNUP_URL = "https://modal.com"
@@ -13,15 +15,16 @@ def is_gpu_exercise(exercise_path) -> bool:
 
 
 def check_modal_available() -> tuple[bool, str]:
-    """Check if Modal is installed and authenticated. Returns (ok, reason)."""
-    try:
-        import modal  # noqa: F401
-    except ImportError:
+    """Check if Modal CLI is installed and authenticated."""
+    if not shutil.which("modal"):
         return False, "not_installed"
 
-    try:
-        modal.config._profile
-    except Exception:
+    result = subprocess.run(
+        ["modal", "profile", "current"],
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
         return False, "not_authenticated"
 
     return True, "ok"
