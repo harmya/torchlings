@@ -32,7 +32,19 @@ def print_welcome_message():
     )
     click.echo(
         click.style(
-            f"To get started, initilize the exercises with {click.style('torchlings init', fg='blue', bold=True)}",
+            f"To get started, initialize the exercises with {click.style('torchlings init', fg='blue', bold=True)}",
+            fg="bright_yellow",
+        )
+    )
+    click.echo(
+        click.style(
+            f"Resume from where you left off with {click.style('torchlings run', fg='blue', bold=True)}",
+            fg="bright_yellow",
+        )
+    )
+    click.echo(
+        click.style(
+            f"Jump to a section with {click.style('torchlings start <section>', fg='blue', bold=True)}",
             fg="bright_yellow",
         )
     )

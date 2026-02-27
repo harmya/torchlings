@@ -104,31 +104,29 @@ class Runner:
         return exercises
 
     def run(self):
-        with click.progressbar(
-            range(self.total_exercises),
-            label=click.style("Progress", fg="yellow", bold=True),
-            fill_char=click.style("█", fg="green"),
-            empty_char=click.style("░", fg="red"),
-            bar_template="%(label)s  %(bar)s  %(info)s",
-            show_percent=True,
-            show_pos=True,
-        ) as bar:
-            bar.update(self.current_index)
+        click.echo(
+            click.style("Progress", fg="yellow", bold=True)
+            + f"  {self.current_index}/{self.total_exercises}"
+        )
+        click.echo(click.style("─" * 50, fg="white"))
+
+        while self.current_index < self.total_exercises:
             click.echo()
-            click.echo(click.style("─" * 50, fg="white"))
-            for _ in bar:
-                click.echo()
-                click.echo(
-                    click.style(
-                        f"Working on {self.exercises[self.current_index]}",
-                        fg="yellow",
-                        bold=True,
-                    )
+            click.echo(
+                click.style(
+                    f"Working on {self.exercises[self.current_index]}",
+                    fg="yellow",
+                    bold=True,
                 )
-                result = self.run_pytest(str(self.exercises[self.current_index]))
-                if not result:
-                    self.watch_file(self.exercises[self.current_index])
-                self.go_to_next_exercise()
+            )
+            result = self.run_pytest(str(self.exercises[self.current_index]))
+            if not result:
+                self.watch_file(self.exercises[self.current_index])
+            self.go_to_next_exercise()
+            click.echo(
+                click.style("Progress", fg="yellow", bold=True)
+                + f"  {self.current_index}/{self.total_exercises}"
+            )
 
     def watch_file(self, exercise_path: Path):
         TARGET = exercise_path.resolve()
@@ -218,7 +216,13 @@ def main():
             script_path = f.name
 
         try:
-            result = subprocess.run(["modal", "run", script_path])
+            result = subprocess.run(
+                ["modal", "run", script_path],
+                capture_output=True,
+                text=True,
+            )
+            if result.stdout:
+                click.echo(result.stdout.rstrip())
             return result.returncode == 0
         finally:
             os.unlink(script_path)
