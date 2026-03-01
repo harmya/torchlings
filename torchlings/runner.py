@@ -1,7 +1,8 @@
 import os
+import subprocess
 from pathlib import Path
-from torchlings.utils import _run
 from torchlings.venv import VENV_NAME
+from torchlings.output import format_test_output
 from torchlings.modal_runner import (
     is_gpu_exercise,
     check_modal_available,
@@ -158,12 +159,14 @@ class Runner:
         env["VIRTUAL_ENV"] = VENV_NAME
         env["PATH"] = str(Path(VENV_NAME) / "bin") + os.pathsep + env["PATH"]
 
-        cmd = ["pytest", "-vv", "--color=yes", "--tb=long", "--no-header"]
+        cmd = ["pytest", "-v", "--tb=short", "--no-header"]
         if target:
             cmd.append(target)
 
-        result = _run(cmd, env=env, display_name=f"Testing {target}")
-        return result.returncode == 0
+        result = subprocess.run(cmd, env=env, capture_output=True, text=True)
+        passed, message = format_test_output(result.stdout, result.stderr)
+        click.echo(message)
+        return passed
 
     def _run_pytest_on_modal(self, target: str) -> bool:
         """Run a GPU exercise on Modal via the modal CLI."""
@@ -205,8 +208,8 @@ def run_exercise():
 @app.local_entrypoint()
 def main():
     output, code = run_exercise.remote()
+    print("TORCHLINGS_RC=" + str(code))
     print(output)
-    raise SystemExit(code)
 '''
 
         with tempfile.NamedTemporaryFile(
@@ -221,9 +224,15 @@ def main():
                 capture_output=True,
                 text=True,
             )
+            passed = False
             if result.stdout:
-                click.echo(result.stdout.rstrip())
-            return result.returncode == 0
+                lines = result.stdout.splitlines()
+                for line in lines:
+                    if line.startswith("TORCHLINGS_RC="):
+                        passed = line.strip() == "TORCHLINGS_RC=0"
+                    else:
+                        click.echo(line)
+            return passed
         finally:
             os.unlink(script_path)
 
