@@ -171,7 +171,7 @@ class Runner:
     def _run_pytest_on_modal(self, target: str) -> bool:
         """Run a GPU exercise on Modal via the modal CLI."""
         import base64
-        import subprocess
+        import subprocess as sp
         import tempfile
 
         click.echo(click.style("Running on Modal GPU...", fg="cyan", bold=True))
@@ -188,6 +188,7 @@ image = modal.Image.debian_slim(python_version="3.12").pip_install(
 )
 
 EXERCISE_B64 = "{exercise_b64}"
+DELIM = "===TORCHLINGS_OUTPUT==="
 
 @app.function(gpu="T4", image=image, timeout=180)
 def run_exercise():
@@ -196,20 +197,19 @@ def run_exercise():
         f.write(content)
         path = f.name
     result = subprocess.run(
-        ["python", "-m", "pytest", path, "-vv", "--tb=long", "--no-header", "--color=yes"],
+        ["python", "-m", "pytest", path, "-v", "--tb=short", "--no-header"],
         capture_output=True, text=True,
     )
     os.unlink(path)
-    output = result.stdout
-    if result.stderr:
-        output += "\\n" + result.stderr
-    return output, result.returncode
+    return result.stdout, result.returncode
 
 @app.local_entrypoint()
 def main():
-    output, code = run_exercise.remote()
-    print("TORCHLINGS_RC=" + str(code))
-    print(output)
+    stdout, code = run_exercise.remote()
+    print(DELIM)
+    print(stdout)
+    print("RC=" + str(code))
+    print(DELIM)
 '''
 
         with tempfile.NamedTemporaryFile(
@@ -219,19 +219,29 @@ def main():
             script_path = f.name
 
         try:
-            result = subprocess.run(
+            result = sp.run(
                 ["modal", "run", script_path],
                 capture_output=True,
                 text=True,
             )
-            passed = False
-            if result.stdout:
-                lines = result.stdout.splitlines()
-                for line in lines:
-                    if line.startswith("TORCHLINGS_RC="):
-                        passed = line.strip() == "TORCHLINGS_RC=0"
-                    else:
-                        click.echo(line)
+            # Extract pytest output between delimiters, ignore Modal noise
+            stdout = result.stdout
+            delim = "===TORCHLINGS_OUTPUT==="
+            pytest_output = ""
+            returncode = 1
+
+            if delim in stdout:
+                parts = stdout.split(delim)
+                if len(parts) >= 2:
+                    payload = parts[1]
+                    for line in payload.splitlines():
+                        if line.startswith("RC="):
+                            returncode = int(line[3:].strip())
+                        else:
+                            pytest_output += line + "\n"
+
+            passed, message = format_test_output(pytest_output, "")
+            click.echo(message)
             return passed
         finally:
             os.unlink(script_path)
